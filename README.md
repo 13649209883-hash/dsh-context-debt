@@ -63,16 +63,24 @@ c04be1d8    6.20MB    5.09M    233.0K    21.9×   486%     危险    20d 前
 | `no-log session=… step=…` | 加载了，但没找到那条会话的日志文件 |
 | `report session=… 156% 偏大 -> "…"` | 真正注入了简报 |
 
-四个最常见的坑：
+如果日志里出现 `no-log`，说明会话日志不在默认位置（`~/.dsh/sessions/<workspace>/session-<id>/session.v4.jsonl.zstd`）——自定义安装目录或 DSH 换了布局时需要改 `sessionsRoot()`。
+
+### 注意事项（安装环境）
+
+下面四条，装的时候大概率会碰上其中一两条。它们**不是 bug**——代码按设计工作，只是环境或用法上有前提：
 
 1. **只建了软链接不够**。profile 的 `package.json` 里必须有依赖行（`pnpm add link:…` 或手改），只在 `node_modules` 里放个 junction 会在启动时报 `no loader entry matched`。
 2. **`pnpm add link:` 可能被卡住**（联网校验/供应链策略）。可以手改 `package.json` 的 `dependencies` 加一行 `"dsh-context-debt": "link:E:/path/to/dsh-context-debt"`，再让 `node_modules/dsh-context-debt` 指过去。
 3. **Windows 路径用正斜杠**：`link:E:/deepseek/plugins/dsh-context-debt`。反斜杠在 YAML/JSON 里会被转义，链接会解析成怪路径。
 4. **服务端插件没有热重载**。改完代码必须重启 DSH，界面刷新没用。
 
-如果日志里全是 `no-log`，说明会话日志不在默认位置（`~/.dsh/sessions/<workspace>/session-<id>/session.v4.jsonl.zstd`）——自定义安装目录或 DSH 换了布局时需要改 `sessionsRoot()`。
+### 已知缺陷（0.1.0，已修）
 
-> 0.1.0 有个 bug：DSH 的 `session.id` 自带 `session-` 前缀，旧代码拼成 `session-session-…` 永远匹配不到，于是**每一台 DSH 上都会静默失效**。0.1.1 起两种写法都认，并加了上面这三行诊断日志。
+> 0.1.0 找不到会话日志，永远不说话。原因：DSH 的 `session.id` 自带 `session-` 前缀，旧代码又包了一层，拼成 `session-session-…`，于是**每一台 DSH 上都会静默失效**。
+
+这不是「偶尔不灵」，而是稳定失效——100% 复现，和你的环境无关。**如果你装的是 0.1.0，别怀疑环境，就是这个**，升级到 0.1.1 即可（两种 id 写法都认，并加了上面那三行诊断日志）。
+
+判据很简单：**照文档做也做不到，是缺陷；不照文档做才做不到，是注意事项。**
 
 ## 你现在在哪一档
 

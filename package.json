@@ -1,6 +1,6 @@
 {
   "name": "dsh-context-debt",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "上下文债务表：让用户看见一个会话已经被压缩到什么程度，而不仅是当前占用。给 DSH 用的零依赖小插件 + CLI。",
   "type": "module",
   "main": "index.js",
