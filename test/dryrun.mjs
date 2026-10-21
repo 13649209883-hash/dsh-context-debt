@@ -33,7 +33,7 @@ assert.ok(warnText.includes('上下文债务'), '提醒应带标题');
 assert.ok(warnText.includes('1.3 份'), `应报出压掉几份完整上下文：${warnText}`);
 assert.ok(!warnText.includes('。。'), '措辞不应出现双句号');
 const dangerText = noticeText(estimate({ bytes: (4.7 * DEFAULT_WINDOW) / DEFAULT_K }));
-assert.ok(dangerText.includes('建议在新会话'), `危险档应建议换会话：${dangerText}`);
+assert.ok(dangerText.includes('换新会话'), `危险档应建议换会话：${dangerText}`);
 
 // 3. 真的能列出本机会话（没有会话日志时跳过）
 const sessions = listSessionFiles();
