@@ -53,6 +53,27 @@ c04be1d8    6.20MB    5.09M    233.0K    21.9×   486%     危险    20d 前
 7ad2e390    4.70MB    552.1K   98.2K     5.6×    333%     警戒    20h 前
 ```
 
+## 装完不说话怎么查
+
+这个插件在没找到会话日志时**静默跳过**（设计如此：绝不打扰对话）。所以「装上了但一句提示都没有」有两种可能，先看 `dsh-context-debt.boot.log`（在系统临时目录里）：
+
+| 日志里出现 | 说明 |
+|:--|:--|
+| `loaded pid=… kSource=…` | 插件被加载了（只有这一行代表「装上了」） |
+| `no-log session=… step=…` | 加载了，但没找到那条会话的日志文件 |
+| `report session=… 156% 偏大 -> "…"` | 真正注入了简报 |
+
+四个最常见的坑：
+
+1. **只建了软链接不够**。profile 的 `package.json` 里必须有依赖行（`pnpm add link:…` 或手改），只在 `node_modules` 里放个 junction 会在启动时报 `no loader entry matched`。
+2. **`pnpm add link:` 可能被卡住**（联网校验/供应链策略）。可以手改 `package.json` 的 `dependencies` 加一行 `"dsh-context-debt": "link:E:/path/to/dsh-context-debt"`，再让 `node_modules/dsh-context-debt` 指过去。
+3. **Windows 路径用正斜杠**：`link:E:/deepseek/plugins/dsh-context-debt`。反斜杠在 YAML/JSON 里会被转义，链接会解析成怪路径。
+4. **服务端插件没有热重载**。改完代码必须重启 DSH，界面刷新没用。
+
+如果日志里全是 `no-log`，说明会话日志不在默认位置（`~/.dsh/sessions/<workspace>/session-<id>/session.v4.jsonl.zstd`）——自定义安装目录或 DSH 换了布局时需要改 `sessionsRoot()`。
+
+> 0.1.0 有个 bug：DSH 的 `session.id` 自带 `session-` 前缀，旧代码拼成 `session-session-…` 永远匹配不到，于是**每一台 DSH 上都会静默失效**。0.1.1 起两种写法都认，并加了上面这三行诊断日志。
+
 ## 你现在在哪一档
 
 | 档位 | 债务 / 窗口 | 意味着什么 | 该做什么 |
