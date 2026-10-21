@@ -61,7 +61,7 @@ import {
 {
   const e = estimate({ bytes: 8 * 1024 * 1024, k: DEFAULT_K });
   assert.ok(e.percent > 400 && e.band === 'danger', `8MB 应判危险：${e.percent}`);
-  assert.ok(formatTokens(1234) === '1.2K');
+  assert.ok(formatTokens(141_700) === '0.14M', `压缩后也用百万：${formatTokens(141_700)}`);
   assert.ok(formatTokens(2_500_000) === '2.50M');
 }
 

@@ -177,7 +177,7 @@ const PAGE = `<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 </tr></thead><tbody id="rows"></tbody></table>
 <div class="worst" id="worst"></div>
 <script>
-const fmt=(n)=>n==null?'—':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(Math.round(n));
+const fmt=(n)=>n==null?'—':(n/1e6).toFixed(2)+'M';
 const ago=(ms)=>{const s=Math.max(0,Math.round((Date.now()-ms)/1000));
  if(s<90)return s+' 秒前'; if(s<5400)return Math.round(s/60)+' 分钟前';
  if(s<129600)return Math.round(s/3600)+' 小时前'; return Math.round(s/86400)+' 天前';};
