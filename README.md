@@ -41,7 +41,8 @@ pnpm add link:/path/to/dsh-context-debt
 
 ```bash
 node panel.mjs              # 一张快照表（前 12 个，按债务降序）
-node panel.mjs --watch 5    # 每 5 秒刷新
+node panel.mjs --watch 5    # 每 5 秒刷新（终端）
+node panel.mjs --serve      # 起网页看板 http://127.0.0.1:7788/（每 5 秒自动刷新）
 node panel.mjs --anon       # 会话 id 换成稳定别名（分享截图用）
 ```
 
@@ -223,6 +224,19 @@ node cli.mjs --anon          # 会话 id 换成稳定别名
 ```
 
 退出码：有会话越过 `warnPercent` 时为 1，方便挂到脚本里。
+
+## 网页看板
+
+```bash
+node panel.mjs --serve        # http://127.0.0.1:7788/
+node panel.mjs --serve 7799   # 端口被占就换一个
+```
+
+一张表，每 5 秒自动刷新（页内 `fetch`，不重载）：会话、日志体积、原始、压缩后、倍率、占窗口、档位、最后改动；底部一行「最重 X 563% 危险」。
+
+它和终端版读的是同一份数据、同一个 `k`。数据只在本机内存里，页面不带任何外部请求，关掉进程就没了。适合折叠窗口里挂一个，或者丢到第二个屏。
+
+> 顺带一个不花 token 的用法：让助手在每轮回复末尾复述一行 `【上下文】…`（插件注入的那句），你就不用切窗口也能看出趋势——但那是助手侧的约定，不是这个插件的能力。
 
 ## 局限
 
