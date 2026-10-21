@@ -17,11 +17,11 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  DEFAULT_K,
   DEFAULT_WINDOW,
   estimate,
   findSessionFile,
   noticeText,
+  resolveK,
   statusText,
 } from './lib/estimate.mjs';
 
@@ -48,8 +48,8 @@ const DEFAULTS = {
   dangerPercent: 350,
   /** 无模型窗口信息时按这个算 */
   window: DEFAULT_WINDOW,
-  /** tok/byte 标定值 */
-  k: DEFAULT_K,
+  /** tok/byte 标定值；null = 用本地标定（calibrate.mjs 生成），再退回 DEFAULT_K */
+  k: null,
   /**
    * 报告节奏：
    *  - 'session'（默认）每个会话第一轮报一次 + 跨档时告警
@@ -93,7 +93,9 @@ function makeNotice(text) {
  */
 export function apply(ctx, rawConfig) {
   const cfg = normalizeConfig(rawConfig);
-  markBoot(cfg);
+  const resolved = resolveK(cfg.k);
+  cfg.k = resolved.k;
+  markBoot({ ...cfg, kSource: resolved.source });
   if (cfg.enabled === false) return;
 
   /** sessionId -> { file, lastBand } */

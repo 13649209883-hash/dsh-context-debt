@@ -7,17 +7,21 @@
   "exports": {
     ".": "./index.js",
     "./lib/estimate": "./lib/estimate.mjs",
+    "./lib/decode": "./lib/decode.mjs",
     "./package.json": "./package.json"
   },
   "bin": {
     "context-debt": "./cli.mjs",
-    "context-debt-panel": "./panel.mjs"
+    "context-debt-panel": "./panel.mjs",
+    "context-debt-calibrate": "./calibrate.mjs"
   },
   "files": [
     "index.js",
     "cli.mjs",
     "panel.mjs",
+    "calibrate.mjs",
     "lib/estimate.mjs",
+    "lib/decode.mjs",
     "data/calibration.json",
     "README.md",
     "LICENSE"

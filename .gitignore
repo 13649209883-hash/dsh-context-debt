@@ -1,5 +1,4 @@
-node_modules/
+# 本地标定（由 calibrate.mjs --write 生成，含本机数据，不进仓库）
+data/calibration.local.json
 *.log
-*.tgz
-.DS_Store
-tmp/
+node_modules/
