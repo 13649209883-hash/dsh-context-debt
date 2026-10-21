@@ -4,8 +4,46 @@
  */
 
 import assert from 'node:assert';
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { decodeSession, formatTokens } from '../lib/decode.mjs';
-import { DEFAULT_K, estimate, listSessionFiles, resolveK } from '../lib/estimate.mjs';
+import {
+  DEFAULT_K,
+  MIN_SAMPLES,
+  estimate,
+  kLevel,
+  listSessionFiles,
+  localK,
+  resolveK,
+} from '../lib/estimate.mjs';
+
+// 0. 样本量门槛：少于 MIN_SAMPLES 不采用；3/5/10 分档
+{
+  assert.equal(MIN_SAMPLES, 3);
+  assert.equal(kLevel(0), '不足');
+  assert.equal(kLevel(2), '不足');
+  assert.equal(kLevel(3), '初步');
+  assert.equal(kLevel(5), '可用');
+  assert.equal(kLevel(10), '较稳');
+
+  const dir = mkdtempSync(join(tmpdir(), 'ctx-debt-'));
+  const weakFile = join(dir, 'weak.json');
+  const okFile = join(dir, 'ok.json');
+  writeFileSync(weakFile, JSON.stringify({ k: 0.4, samples: 2 }), 'utf8');
+  writeFileSync(okFile, JSON.stringify({ k: 0.4, samples: 4, range: [0.3, 0.5] }), 'utf8');
+
+  const weak = resolveK(undefined, weakFile);
+  assert.equal(weak.k, DEFAULT_K, `样本不足时应回退出厂值，实际 ${weak.k}`);
+  assert.ok(weak.source.includes(String(MIN_SAMPLES)), `来源里应写清门槛：${weak.source}`);
+
+  const ok = resolveK(undefined, okFile);
+  assert.equal(ok.k, 0.4);
+  assert.equal(ok.level, '初步');
+
+  rmSync(dir, { recursive: true, force: true });
+  console.log(`样本量门槛 ok：<${MIN_SAMPLES} 回退出厂 ${DEFAULT_K}，4 个样本采用并标「初步」`);
+}
 
 // 1. k 的优先级：配置 > 本地 > 出厂
 {

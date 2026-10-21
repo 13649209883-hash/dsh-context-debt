@@ -18,7 +18,9 @@ import { decodeSession, formatTokens } from './lib/decode.mjs';
 import {
   DEFAULT_K,
   LOCAL_K_FILE,
+  MIN_SAMPLES,
   estimate,
+  kLevel,
   listSessionFiles,
   localK,
   resolveK,
@@ -42,8 +44,13 @@ if (has('show')) {
   const local = localK();
   const resolved = resolveK(undefined);
   console.log(`当前生效 k = ${resolved.k.toFixed(3)}（来源：${resolved.source}）`);
-  console.log(`出厂值 ${DEFAULT_K}  ·  标定文件 ${local ? LOCAL_K_FILE : '（还没有，跑一次 --write 生成）'}`);
-  if (local) console.log(`标定于 ${local.generatedAt ?? '未知时间'}，样本 ${local.samples ?? '?'} 个`);
+  console.log(`出厂值 ${DEFAULT_K}  ·  门槛 ${MIN_SAMPLES} 个样本  ·  标定文件 ${local ? LOCAL_K_FILE : '（还没有，跑一次 --write 生成）'}`);
+  if (local) {
+    console.log(`标定：${local.samples} 个样本（${local.level}）` +
+      (local.range ? `，区间 ${local.range[0].toFixed(3)} ~ ${local.range[1].toFixed(3)}` : '') +
+      `，标定于 ${local.generatedAt ?? '未知时间'}`);
+    if (!local.usable) console.log(`→ 样本数不够，插件实际用的是出厂值；攒到 ${MIN_SAMPLES} 个再 --write。`);
+  }
   process.exit(0);
 }
 
@@ -108,21 +115,39 @@ for (const r of rows) {
   );
 }
 console.log('');
-console.log(`样本 ${kept.length} 个计入 · k 中位数 ${k.toFixed(3)} · 区间 ${lo.toFixed(3)} ~ ${hi.toFixed(3)}` +
+const level = kLevel(kept.length);
+console.log(`样本 ${kept.length} 个计入 · k 中位数 ${k.toFixed(3)} · 区间 ${lo.toFixed(3)} ~ ${hi.toFixed(3)} · 档位 ${level}` +
   (dropped.length ? ` · 另有 ${dropped.length} 个偏图文样本未计入` : ''));
+if (kept.length < 5) {
+  console.log(`样本偏少：${MIN_SAMPLES} 个只是下限，${kept.length} 个时中位数还会随样本换一批就漂；` +
+    `多跑几个（--n 10）或等新会话攒够再 --write。`);
+}
 
 const preview = estimate({ bytes: 8 * 1024 * 1024, k, window: 1048576 });
 console.log(`按这个 k，8MB 的会话 ≈ ${formatTokens(preview.tokens)} tokens（${preview.percent.toFixed(0)}% 窗口，${preview.band}）`);
 
+const sampleRule = [
+  `样本量门槛：< ${MIN_SAMPLES} 个不下结论（继续用出厂 ${DEFAULT_K}），${MIN_SAMPLES}–4 个算「初步」，5–9 个算「可用」，≥10 个算「较稳」。`,
+  '为什么：k 因内容类型而异（纯代码偏低、中文对话偏高），3 个样本的中位数换个样本就可能跳 20%。',
+  '建议：攒 5 个以上再 --write；换了工作方式（比如从贴大文件改成写代码）就重跑一次。',
+].join('\n');
+console.log('');
+console.log(sampleRule);
+
 if (has('write')) {
+  if (kept.length < MIN_SAMPLES) {
+    console.error(`只有 ${kept.length} 个有效样本，少于门槛 ${MIN_SAMPLES}，不写盘（写了也不会被插件采用）。`);
+    process.exit(2);
+  }
   mkdirSync(dirname(LOCAL_K_FILE), { recursive: true });
   const payload = {
     k: Number(k.toFixed(4)),
     samples: kept.length,
+    level,
     dropped: dropped.length,
     range: [Number(lo.toFixed(4)), Number(hi.toFixed(4))],
     generatedAt: new Date().toISOString(),
-    note: '由 node calibrate.mjs --write 生成；删掉本文件即回到出厂值。',
+    note: `由 node calibrate.mjs --write 生成（${level}：${kept.length} 个样本）；删掉本文件即回到出厂值 ${DEFAULT_K}。`,
   };
   writeFileSync(LOCAL_K_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf8');
   console.log(`已写入 ${LOCAL_K_FILE}（插件下次启动生效）`);
