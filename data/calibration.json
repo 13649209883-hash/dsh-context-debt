@@ -1,0 +1,70 @@
+{
+  "$comment": "k 标定样本表。每行 = 一次独立测量：日志字节数、该会话的实际堆积 tokens、反推 k。样本匿名，不要写会话 id、路径、对话内容。欢迎提 PR 加行。",
+  "unit": {
+    "logBytes": "会话日志文件字节数（zstd 压缩后）",
+    "tokens": "该会话累计实际堆积 tokens（解日志统计，或按事件 JSON 长度换算上界）",
+    "k": "tokens / logBytes，tok/byte",
+    "percent": "tokens / 模型上下文窗口，%"
+  },
+  "samples": [
+    {
+      "id": "sample-a",
+      "logBytes": 7790000,
+      "tokens": 4950000,
+      "k": 0.635,
+      "window": 1048576,
+      "percent": 472,
+      "outcome": "degraded",
+      "outcomeNote": "连续空回复，最后换会话重做",
+      "compressionPlugin": "billion-context",
+      "compressionVersion": "0.1.202",
+      "model": "deepseek-v4.1-flash"
+    },
+    {
+      "id": "sample-b",
+      "logBytes": 7620000,
+      "tokens": 5700000,
+      "k": 0.748,
+      "window": 1048576,
+      "percent": 543,
+      "outcome": "degraded",
+      "outcomeNote": "长任务后半段跑偏，返工",
+      "compressionPlugin": "billion-context",
+      "compressionVersion": "0.1.202",
+      "model": "deepseek-v4.1-flash"
+    },
+    {
+      "id": "sample-c",
+      "logBytes": 6860000,
+      "tokens": 5870000,
+      "k": 0.855,
+      "window": 1048576,
+      "percent": 587,
+      "outcome": "degraded",
+      "outcomeNote": "压缩比 69×，回答基本靠摘要",
+      "compressionPlugin": "billion-context",
+      "compressionVersion": "0.1.202",
+      "model": "deepseek-v4.1-flash"
+    },
+    {
+      "id": "sample-d",
+      "logBytes": 1160000,
+      "tokens": 710000,
+      "k": 0.615,
+      "window": 1048576,
+      "percent": 68,
+      "outcome": "normal",
+      "outcomeNote": "正常结束",
+      "compressionPlugin": "billion-context",
+      "compressionVersion": "0.1.202",
+      "model": "deepseek-v4.1-flash"
+    }
+  ],
+  "derived": {
+    "kMedian": 0.71,
+    "kMin": 0.615,
+    "kMax": 0.855,
+    "samples": 4,
+    "note": "4 个样本、单机、单模型。样本越多，中位数越可信；如果你的 k 明显不同，优先怀疑语言构成与压缩粒度差异。"
+  }
+}

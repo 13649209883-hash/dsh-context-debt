@@ -1,0 +1,61 @@
+name: 提交 k 标定数据
+description: 用你自己的环境和压缩插件测出的一行 k 数据
+title: "calibration: <模型> + <压缩插件> + k=<值>"
+labels: ["calibration"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        一行就够，格式见 [`data/calibration.json`](../../blob/main/data/calibration.json)。
+        **请不要贴会话 id、文件路径或对话内容。**
+  - type: input
+    id: model
+    attributes:
+      label: 模型
+      placeholder: deepseek-v4.1-flash / glm-5.3 / ...
+    validations:
+      required: true
+  - type: input
+    id: plugin
+    attributes:
+      label: 压缩插件与版本
+      placeholder: billion-context 0.1.203 / DSH 原生压缩 / 自研
+    validations:
+      required: true
+  - type: input
+    id: logBytes
+    attributes:
+      label: 日志字节数
+      placeholder: "7790000"
+    validations:
+      required: true
+  - type: input
+    id: tokens
+    attributes:
+      label: 实际堆积 tokens
+      placeholder: "4950000"
+    validations:
+      required: true
+  - type: input
+    id: k
+    attributes:
+      label: 反推 k（tok/byte）
+      placeholder: "0.635"
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: 该会话结局
+      options:
+        - normal（正常结束）
+        - degraded（明显变差/返工）
+        - failed（空回复/彻底不可用）
+    validations:
+      required: true
+  - type: textarea
+    id: note
+    attributes:
+      label: 备注
+      description: 语言构成（中英比例）、是否含大量代码、其他影响 k 的因素
+      placeholder: 中文为主，约 30% 工具输出，无代码块
