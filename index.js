@@ -40,6 +40,13 @@ function markBoot(config) {
   } catch { /* 标记失败不影响主流程 */ }
 }
 
+/** 诊断行：排查「装上了但没动静」时看这个文件。 */
+function markLine(text) {
+  try {
+    appendFileSync(BOOT_LOG, `${new Date().toISOString()} ${text}\n`, 'utf8');
+  } catch { /* 同上 */ }
+}
+
 const DEFAULTS = {
   enabled: true,
   /** 超过窗口这个百分比才提醒 */
@@ -100,14 +107,22 @@ export function apply(ctx, rawConfig) {
 
   /** sessionId -> { file, lastBand } */
   const seen = new Map();
+  /** 已经为哪个 sessionId 打过「找不到日志」的诊断，避免每步都写 */
+  const warned = new Set();
 
-  const measure = (agent) => {
+  const measure = (agent, step) => {
     const sessionId = agent?.session?.id;
     if (!sessionId) return undefined;
     let entry = seen.get(sessionId);
     if (entry === undefined) {
       const file = findSessionFile(sessionId);
-      if (file === undefined) return undefined;
+      if (file === undefined) {
+        if (!warned.has(sessionId)) {
+          warned.add(sessionId);
+          markLine(`no-log session=${sessionId} step=${step}`);
+        }
+        return undefined;
+      }
       entry = { file, lastBand: 'normal', reported: false };
       seen.set(sessionId, entry);
     }
@@ -122,7 +137,7 @@ export function apply(ctx, rawConfig) {
     try {
       if (step !== 1) return decision; // 每轮只在第一步判断
       if (decision?.kind === 'reject' || !Array.isArray(decision?.messages)) return decision;
-      const measured = measure(agent);
+      const measured = measure(agent, step);
       if (measured === undefined) return decision;
       const { entry, est } = measured;
       const threshold = est.band === 'danger' ? cfg.dangerPercent : cfg.warnPercent;
@@ -142,6 +157,7 @@ export function apply(ctx, rawConfig) {
       if (text === undefined) return decision;
 
       const notice = makeNotice(text);
+      markLine(`report session=${agent?.session?.id ?? '?'} ${est.percent.toFixed(0)}% ${est.band} -> "${text.slice(0, 24)}…"`);
       const lastClaimed = decision.messages.findLastIndex((message) => messages.includes(message));
       const at = lastClaimed >= 0 ? lastClaimed + 1 : decision.messages.length;
       return { ...decision, messages: decision.messages.toSpliced(at, 0, notice) };

@@ -12,6 +12,7 @@ import {
   DEFAULT_K,
   MIN_SAMPLES,
   estimate,
+  findSessionFile,
   kLevel,
   listSessionFiles,
   localK,
@@ -87,4 +88,18 @@ import {
   }
 }
 
-console.log('ok — k 优先级 / 估算 / 真会话解码 三组用例通过');
+// 4. 会话 id 两种写法都要认（DSH 的 session.id 自带 `session-` 前缀）
+{
+  const sessions = listSessionFiles();
+  if (sessions.length === 0) {
+    console.log('跳过 id 用例：本机没有会话日志');
+  } else {
+    const dir = sessions[0].file.split(/[\\/]/).at(-2); // session-<uuid>
+    const core = dir.replace(/^session-/, '');
+    assert.equal(findSessionFile(dir), sessions[0].file, '带前缀的 id 应能找到');
+    assert.equal(findSessionFile(core), sessions[0].file, '不带前缀的 id 也应能找到');
+    console.log(`会话 id 兼容 ok：${dir.slice(0, 18)}… 与裸 uuid 都命中`);
+  }
+}
+
+console.log('ok — k 优先级 / 估算 / 真会话解码 / 会话 id 兼容 四组用例通过');
