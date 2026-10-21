@@ -7,7 +7,8 @@
  *
  * 设计约束：
  *  - 零依赖（只用 node 内置模块），不 import 任何 @deepseek-ai/*，避免解析风险；
- *  - 不做任何解码/解析，纯 stat；
+ *  - 每轮只 stat 一次；「原始/压缩后/倍率」三个实测数来自解码会话日志，
+ *    但被 lib/real.mjs 节流到「最多 60 秒解一次、且至少隔 15 秒」，不会每轮都解；
  *  - 每轮最多注入一次，同一条带只提醒一次（单调升级，不重复刷屏）；
  *  - 任何异常都吞掉，绝不影响主流程。
  */
@@ -19,11 +20,13 @@ import { join } from 'node:path';
 import {
   DEFAULT_WINDOW,
   estimate,
+  estimateFromTokens,
   findSessionFile,
   noticeText,
   resolveK,
   statusText,
 } from './lib/estimate.mjs';
+import { realStats } from './lib/real.mjs';
 
 export const name = 'context-debt';
 
@@ -60,7 +63,7 @@ const DEFAULTS = {
   /**
    * 报告节奏：
    *  - 'session'（默认）每个会话第一轮报一次 + 跨档时告警
-   *  - 'always'   每轮都报一行（约 30 字，几乎不占上下文）
+   *  - 'always'   每轮都报一行（约 60 字，几乎不占上下文）
    *  - 'warn'     只在跨档时告警，平时完全静默
    */
   report: 'session',
@@ -129,7 +132,12 @@ export function apply(ctx, rawConfig) {
     let bytes;
     try { bytes = statSync(entry.file).size; } catch { return undefined; }
     const window = windowOf(ctx, agent.session, cfg.window);
-    return { entry, est: estimate({ bytes, k: cfg.k, window }) };
+    const real = realStats(entry.file, bytes);
+    const est = real
+      ? estimateFromTokens({ tokens: real.originalTokens, window, bytes })
+      : estimate({ bytes, k: cfg.k, window });
+    est.real = real;
+    return { entry, est };
   };
 
   ctx.on('agent/pre-step', async ({ agent, messages, step }, next) => {
