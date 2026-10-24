@@ -41,10 +41,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/13649209883-hash/dsh-context-debt.git"
+    "url": "git+ssh://git@github.com/SkyCrown-dev/dsh-context-debt.git"
   },
-  "homepage": "https://github.com/13649209883-hash/dsh-context-debt#readme",
+  "homepage": "https://github.com/SkyCrown-dev/dsh-context-debt#readme",
   "bugs": {
-    "url": "https://github.com/13649209883-hash/dsh-context-debt/issues"
+    "url": "https://github.com/SkyCrown-dev/dsh-context-debt/issues"
   }
 }
